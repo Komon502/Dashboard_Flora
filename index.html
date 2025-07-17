@@ -407,40 +407,49 @@
     </div>
 
     <script>
-        // Simulated device data
-        const devices = [
-            {
+        // Configuration - แก้ไข IP Address ให้ตรงกับ ESP32 Server ของคุณ
+        const CONFIG = {
+            ESP32_SERVER_IP: '192.168.1.100',  // แก้ไข IP Address ตามจริง
+            HTTP_PORT: 80,
+            WEBSOCKET_PORT: 81,
+            POLLING_INTERVAL: 5000,  // 5 seconds
+            CONNECTION_TIMEOUT: 10000  // 10 seconds
+        };
+
+        // Device data storage
+        let devices = {
+            'ESP32_001': {
                 id: 'ESP32_001',
                 name: 'Plant Monitor A',
                 location: 'Living Room',
-                isActive: true,
-                lastSeen: new Date(),
+                isActive: false,
+                lastSeen: null,
                 sensors: {
-                    temperature: 25.5,
-                    humidity: 65,
-                    soilMoisture: 45,
-                    lightLevel: 850
+                    temperature: 0,
+                    humidity: 0,
+                    soilMoisture: 0,
+                    lightLevel: 0
                 }
             },
-            {
+            'ESP32_002': {
                 id: 'ESP32_002',
                 name: 'Plant Monitor B',
                 location: 'Balcony',
-                isActive: true,
-                lastSeen: new Date(),
+                isActive: false,
+                lastSeen: null,
                 sensors: {
-                    temperature: 28.2,
-                    humidity: 58,
-                    soilMoisture: 32,
-                    lightLevel: 1200
+                    temperature: 0,
+                    humidity: 0,
+                    soilMoisture: 0,
+                    lightLevel: 0
                 }
             },
-            {
+            'ESP32_003': {
                 id: 'ESP32_003',
                 name: 'Plant Monitor C',
                 location: 'Garden',
                 isActive: false,
-                lastSeen: new Date(Date.now() - 300000), // 5 minutes ago
+                lastSeen: null,
                 sensors: {
                     temperature: 0,
                     humidity: 0,
@@ -448,16 +457,189 @@
                     lightLevel: 0
                 }
             }
-        ];
+        };
 
         let dataLogs = [];
         let logId = 1;
+        let websocket = null;
+        let reconnectAttempts = 0;
+        let maxReconnectAttempts = 5;
+
+        // WebSocket connection
+        function initWebSocket() {
+            try {
+                websocket = new WebSocket(`ws://${CONFIG.ESP32_SERVER_IP}:${CONFIG.WEBSOCKET_PORT}/ws`);
+                
+                websocket.onopen = function(event) {
+                    console.log('WebSocket connected');
+                    reconnectAttempts = 0;
+                    updateConnectionStatus(true);
+                };
+                
+                websocket.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        processWebSocketData(data);
+                    } catch (error) {
+                        console.error('Error parsing WebSocket data:', error);
+                    }
+                };
+                
+                websocket.onclose = function(event) {
+                    console.log('WebSocket disconnected');
+                    updateConnectionStatus(false);
+                    
+                    // Attempt to reconnect
+                    if (reconnectAttempts < maxReconnectAttempts) {
+                        reconnectAttempts++;
+                        setTimeout(() => {
+                            console.log(`Attempting to reconnect... (${reconnectAttempts}/${maxReconnectAttempts})`);
+                            initWebSocket();
+                        }, 5000);
+                    }
+                };
+                
+                websocket.onerror = function(error) {
+                    console.error('WebSocket error:', error);
+                    updateConnectionStatus(false);
+                };
+                
+            } catch (error) {
+                console.error('Failed to initialize WebSocket:', error);
+                updateConnectionStatus(false);
+            }
+        }
+
+        // Process WebSocket data
+        function processWebSocketData(data) {
+            if (data.deviceId && devices[data.deviceId]) {
+                const device = devices[data.deviceId];
+                
+                // Update device data
+                device.isActive = true;
+                device.lastSeen = new Date();
+                
+                if (data.sensors) {
+                    device.sensors = {
+                        temperature: parseFloat(data.sensors.temperature) || 0,
+                        humidity: parseFloat(data.sensors.humidity) || 0,
+                        soilMoisture: parseFloat(data.sensors.soilMoisture) || 0,
+                        lightLevel: parseFloat(data.sensors.lightLevel) || 0
+                    };
+                }
+                
+                // Add to logs
+                const logData = `T:${device.sensors.temperature.toFixed(1)}°C, H:${device.sensors.humidity.toFixed(1)}%, S:${device.sensors.soilMoisture.toFixed(1)}%, L:${device.sensors.lightLevel.toFixed(0)}lux`;
+                addLog(device, logData);
+                
+                // Update displays
+                updateDeviceDisplay();
+                updateStats();
+                checkAlerts();
+            }
+        }
+
+        // HTTP API polling (fallback if WebSocket fails)
+        async function fetchDeviceData() {
+            try {
+                const response = await fetch(`http://${CONFIG.ESP32_SERVER_IP}:${CONFIG.HTTP_PORT}/api/devices`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: CONFIG.CONNECTION_TIMEOUT
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    processHttpData(data);
+                    updateConnectionStatus(true);
+                } else {
+                    console.error('HTTP request failed:', response.status);
+                    updateConnectionStatus(false);
+                }
+            } catch (error) {
+                console.error('Error fetching device data:', error);
+                updateConnectionStatus(false);
+            }
+        }
+
+        // Process HTTP data
+        function processHttpData(data) {
+            if (data.devices && Array.isArray(data.devices)) {
+                data.devices.forEach(deviceData => {
+                    if (devices[deviceData.id]) {
+                        const device = devices[deviceData.id];
+                        
+                        device.isActive = deviceData.active || false;
+                        device.lastSeen = new Date(deviceData.lastSeen) || new Date();
+                        
+                        if (deviceData.sensors) {
+                            device.sensors = {
+                                temperature: parseFloat(deviceData.sensors.temperature) || 0,
+                                humidity: parseFloat(deviceData.sensors.humidity) || 0,
+                                soilMoisture: parseFloat(deviceData.sensors.soilMoisture) || 0,
+                                lightLevel: parseFloat(deviceData.sensors.lightLevel) || 0
+                            };
+                        }
+                        
+                        // Add to logs
+                        const logData = `T:${device.sensors.temperature.toFixed(1)}°C, H:${device.sensors.humidity.toFixed(1)}%, S:${device.sensors.soilMoisture.toFixed(1)}%, L:${device.sensors.lightLevel.toFixed(0)}lux`;
+                        addLog(device, logData);
+                    }
+                });
+                
+                updateDeviceDisplay();
+                updateStats();
+                checkAlerts();
+            }
+        }
+
+        // Update connection status
+        function updateConnectionStatus(isConnected) {
+            const statusBar = document.querySelector('.status-bar');
+            const statusIndicator = statusBar.querySelector('.status-indicator');
+            const statusText = statusBar.querySelector('.status-item span');
+            
+            if (isConnected) {
+                statusIndicator.className = 'status-indicator status-online';
+                statusText.textContent = 'Server Status: Online';
+            } else {
+                statusIndicator.className = 'status-indicator status-offline';
+                statusText.textContent = 'Server Status: Offline';
+            }
+        }
+
+        // Send command to ESP32 (optional)
+        async function sendCommand(deviceId, command) {
+            try {
+                const response = await fetch(`http://${CONFIG.ESP32_SERVER_IP}:${CONFIG.HTTP_PORT}/api/command`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        deviceId: deviceId,
+                        command: command
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('Command sent successfully:', result);
+                } else {
+                    console.error('Failed to send command:', response.status);
+                }
+            } catch (error) {
+                console.error('Error sending command:', error);
+            }
+        }
 
         function updateDeviceDisplay() {
             const devicesGrid = document.getElementById('devicesGrid');
             devicesGrid.innerHTML = '';
 
-            devices.forEach(device => {
+            Object.values(devices).forEach(device => {
                 const deviceCard = document.createElement('div');
                 deviceCard.className = 'device-card';
                 
@@ -507,7 +689,7 @@
         }
 
         function updateStats() {
-            const activeDevices = devices.filter(d => d.isActive);
+            const activeDevices = Object.values(devices).filter(d => d.isActive);
             
             document.getElementById('activeDevices').textContent = activeDevices.length;
             document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('th-TH');
@@ -523,6 +705,11 @@
                 document.getElementById('avgHumidity').textContent = avgHumidity;
                 document.getElementById('avgSoil').textContent = avgSoil;
                 document.getElementById('avgLight').textContent = avgLight;
+            } else {
+                document.getElementById('avgTemp').textContent = '--';
+                document.getElementById('avgHumidity').textContent = '--';
+                document.getElementById('avgSoil').textContent = '--';
+                document.getElementById('avgLight').textContent = '--';
             }
         }
 
@@ -567,14 +754,16 @@
             const alertContainer = document.getElementById('alertContainer');
             alertContainer.innerHTML = '';
             
-            devices.forEach(device => {
-                const timeSinceLastSeen = (new Date() - device.lastSeen) / 1000;
-                
-                if (timeSinceLastSeen > 300) { // 5 minutes
-                    const alert = document.createElement('div');
-                    alert.className = 'alert alert-error';
-                    alert.textContent = `⚠️ ${device.name} ไม่ได้ส่งข้อมูลมาเป็นเวลา ${Math.floor(timeSinceLastSeen / 60)} นาที`;
-                    alertContainer.appendChild(alert);
+            Object.values(devices).forEach(device => {
+                if (device.lastSeen) {
+                    const timeSinceLastSeen = (new Date() - device.lastSeen) / 1000;
+                    
+                    if (timeSinceLastSeen > 300) { // 5 minutes
+                        const alert = document.createElement('div');
+                        alert.className = 'alert alert-error';
+                        alert.textContent = `⚠️ ${device.name} ไม่ได้ส่งข้อมูลมาเป็นเวลา ${Math.floor(timeSinceLastSeen / 60)} นาที`;
+                        alertContainer.appendChild(alert);
+                    }
                 }
                 
                 if (device.isActive) {
@@ -623,68 +812,83 @@
             window.URL.revokeObjectURL(url);
         }
 
-        // Simulate data updates
-        function simulateDataUpdate() {
-            devices.forEach(device => {
-                if (Math.random() > 0.7) { // 30% chance of update per device
-                    if (device.isActive) {
-                        // Simulate sensor readings with some variance
-                        device.sensors.temperature += (Math.random() - 0.5) * 2;
-                        device.sensors.humidity += (Math.random() - 0.5) * 5;
-                        device.sensors.soilMoisture += (Math.random() - 0.5) * 3;
-                        device.sensors.lightLevel += (Math.random() - 0.5) * 100;
-                        
-                        // Keep values in reasonable ranges
-                        device.sensors.temperature = Math.max(15, Math.min(40, device.sensors.temperature));
-                        device.sensors.humidity = Math.max(20, Math.min(80, device.sensors.humidity));
-                        device.sensors.soilMoisture = Math.max(0, Math.min(100, device.sensors.soilMoisture));
-                        device.sensors.lightLevel = Math.max(0, Math.min(2000, device.sensors.lightLevel));
-                        
-                        device.lastSeen = new Date();
-                        
-                        // Add to logs
-                        const logData = `T:${device.sensors.temperature.toFixed(1)}°C, H:${device.sensors.humidity.toFixed(1)}%, S:${device.sensors.soilMoisture.toFixed(1)}%, L:${device.sensors.lightLevel.toFixed(0)}lux`;
-                        addLog(device, logData);
-                    }
+        // Device health check
+        function checkDeviceHealth() {
+            const now = new Date();
+            Object.values(devices).forEach(device => {
+                if (device.lastSeen && (now - device.lastSeen) > 60000) { // 1 minute
+                    device.isActive = false;
                 }
             });
-            
-            // Randomly toggle device status
-            if (Math.random() < 0.05) { // 5% chance
-                const randomDevice = devices[Math.floor(Math.random() * devices.length)];
-                randomDevice.isActive = !randomDevice.isActive;
-                if (!randomDevice.isActive) {
-                    randomDevice.sensors = { temperature: 0, humidity: 0, soilMoisture: 0, lightLevel: 0 };
-                }
-            }
         }
 
         // Initialize and start updates
         function init() {
+            console.log('Initializing Flora Care Dashboard...');
+            
+            // Try to connect via WebSocket first
+            initWebSocket();
+            
+            // Fallback to HTTP polling if WebSocket fails
+            setTimeout(() => {
+                if (!websocket || websocket.readyState !== WebSocket.OPEN) {
+                    console.log('WebSocket failed, falling back to HTTP polling');
+                    setInterval(fetchDeviceData, CONFIG.POLLING_INTERVAL);
+                }
+            }, 3000);
+            
+            // Regular updates
             updateDeviceDisplay();
             updateStats();
-            updateLogDisplay();
             checkAlerts();
             
-            // Add some initial logs
-            devices.forEach(device => {
-                if (device.isActive) {
-                    const logData = `T:${device.sensors.temperature.toFixed(1)}°C, H:${device.sensors.humidity.toFixed(1)}%, S:${device.sensors.soilMoisture.toFixed(1)}%, L:${device.sensors.lightLevel.toFixed(0)}lux`;
-                    addLog(device, logData);
-                }
-            });
+            // Check device health every 30 seconds
+            setInterval(checkDeviceHealth, 30000);
             
-            // Update every 5 seconds
+            // Update UI every 5 seconds
             setInterval(() => {
-                simulateDataUpdate();
                 updateDeviceDisplay();
                 updateStats();
                 checkAlerts();
             }, 5000);
         }
 
+        // Manual refresh button
+        function refreshData() {
+            if (websocket && websocket.readyState === WebSocket.OPEN) {
+                // Send refresh request via WebSocket
+                websocket.send(JSON.stringify({
+                    type: 'refresh_request'
+                }));
+            } else {
+                // Fetch via HTTP
+                fetchDeviceData();
+            }
+        }
+
+        // Add refresh button to log controls
+        function addRefreshButton() {
+            const logControls = document.querySelector('.log-controls');
+            const refreshBtn = document.createElement('button');
+            refreshBtn.className = 'btn btn-primary';
+            refreshBtn.textContent = 'Refresh Data';
+            refreshBtn.onclick = refreshData;
+            logControls.insertBefore(refreshBtn, logControls.firstChild);
+        }
+
         // Start the dashboard
-        init();
+        window.addEventListener('load', () => {
+            init();
+            addRefreshButton();
+        });
+
+        // Handle page visibility change
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                // Refresh data when page becomes visible
+                refreshData();
+            }
+        });
     </script>
 </body>
 </html>
