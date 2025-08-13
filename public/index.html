@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flora Care System Dashboard</title>
+    <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body>
+    <div class="header">
+        <h1>🌱 Flora Care System Dashboard</h1>
+        <p>ระบบติดตามดูแลต้นไม้อัจฉริยะ - ESP32 BLE Network</p>
+    </div>
+
+    <div class="dashboard">
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-indicator status-online"></div>
+                <span>Server Status: <span id="serverStatus">Online</span></span>
+            </div>
+            <div class="status-item">
+                <span>Active Devices: <span id="activeDevices">0</span>/3</span>
+            </div>
+            <div class="status-item">
+                <span>Last Update: <span id="lastUpdate">--:--:--</span></span>
+            </div>
+            <div class="status-item">
+                <span>Total Logs: <span id="totalLogs">0</span></span>
+            </div>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="avgTemp">--</div>
+                <div class="stat-label">อุณหภูมิเฉลี่ย (°C)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="avgHumidity">--</div>
+                <div class="stat-label">ความชื้นเฉลี่ย (%)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="avgSoil">--</div>
+                <div class="stat-label">ความชื้นดินเฉลี่ย (%)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="avgLight">--</div>
+                <div class="stat-label">แสงเฉลี่ย (lux)</div>
+            </div>
+        </div>
+
+        <div class="devices-grid" id="devicesGrid"></div>
+
+        <div class="log-section">
+            <div class="log-header">
+                <h2 class="log-title">📊 Data Logs</h2>
+                <div class="log-controls">
+                    <button class="btn btn-primary" id="btnRefresh">Refresh Data</button>
+                    <button class="btn btn-secondary" id="btnClear">Clear Logs</button>
+                    <button class="btn btn-primary" id="btnExport">Export CSV</button>
+                </div>
+            </div>
+            <div class="log-container" id="logContainer"></div>
+        </div>
+    </div>
+
+    <script src="./script.js"></script>
+</body>
+
+</html>
