@@ -5,30 +5,33 @@
 }
 
 body {
-    font-family: 'Arial', sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-family: 'Orbitron', sans-serif;
+    background: radial-gradient(circle at top left, #0f0c29, #302b63, #24243e);
     min-height: 100vh;
-    color: #333
+    color: #e0e0e0
 }
 
 .header {
-    background: rgba(255, 255, 255, .1);
-    backdrop-filter: blur(10px);
+    background: rgba(0, 0, 0, .6);
+    backdrop-filter: blur(15px);
     padding: 20px;
     text-align: center;
-    color: #fff;
-    border-bottom: 1px solid rgba(255, 255, 255, .2)
+    color: #0ff;
+    border-bottom: 2px solid #0ff;
+    text-shadow: 0 0 15px #0ff, 0 0 30px #f0f
 }
 
 .header h1 {
     font-size: 2.5em;
     margin-bottom: 10px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, .3)
+    color: #fff;
+    text-shadow: 0 0 20px #0ff, 0 0 40px #f0f
 }
 
 .header p {
     font-size: 1.1em;
-    opacity: .9
+    opacity: .9;
+    color: #bbb
 }
 
 .dashboard {
@@ -41,11 +44,13 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(255, 255, 255, .95);
+    background: rgba(10, 10, 30, 0.9);
     padding: 15px 25px;
     border-radius: 15px;
     margin-bottom: 30px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, .1)
+    box-shadow: 0 0 20px rgba(0,255,255,0.4);
+    border: 1px solid rgba(0,255,255,0.6);
+    color: #0ff
 }
 
 .status-item {
@@ -59,27 +64,23 @@ body {
     width: 12px;
     height: 12px;
     border-radius: 50%;
+    box-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
     animation: pulse 2s infinite
 }
 
 .status-online {
-    background: #4ade80
+    background: #0f0;
+    color: #0f0
 }
 
 .status-offline {
-    background: #f87171
+    background: #f00;
+    color: #f00
 }
 
 @keyframes pulse {
-
-    0%,
-    100% {
-        opacity: 1
-    }
-
-    50% {
-        opacity: .5
-    }
+    0%,100% { opacity: 1 }
+    50% { opacity: .5 }
 }
 
 .devices-grid {
@@ -90,30 +91,25 @@ body {
 }
 
 .device-card {
-    background: rgba(255, 255, 255, .95);
+    background: rgba(20, 20, 40, .9);
+    border: 2px solid rgba(0,255,255,0.4);
     border-radius: 20px;
     padding: 25px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, .1);
+    box-shadow: 0 0 25px rgba(0,255,255,0.3), inset 0 0 15px rgba(0,0,255,0.3);
     backdrop-filter: blur(10px);
     transition: transform .3s ease, box-shadow .3s ease
 }
 
 .device-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 48px rgba(0, 0, 0, .15)
-}
-
-.device-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 0 40px #0ff, 0 0 80px #f0f
 }
 
 .device-title {
     font-size: 1.3em;
     font-weight: 700;
-    color: #2d3748
+    color: #0ff;
+    text-shadow: 0 0 10px #0ff
 }
 
 .device-status {
@@ -125,13 +121,17 @@ body {
 }
 
 .status-active {
-    background: #d1fae5;
-    color: #065f46
+    background: rgba(0,255,128,.2);
+    color: #0f0;
+    border: 1px solid #0f0;
+    text-shadow: 0 0 10px #0f0
 }
 
 .status-inactive {
-    background: #fee2e2;
-    color: #991b1b
+    background: rgba(255,0,0,.2);
+    color: #f55;
+    border: 1px solid #f55;
+    text-shadow: 0 0 10px #f55
 }
 
 .sensor-grid {
@@ -142,41 +142,45 @@ body {
 }
 
 .sensor-item {
-    background: rgba(99, 102, 241, .1);
+    background: rgba(0,0,0,.5);
     padding: 15px;
     border-radius: 12px;
-    border-left: 4px solid #6366f1
+    border-left: 4px solid #0ff;
+    color: #fff;
+    box-shadow: 0 0 15px rgba(0,255,255,.3)
 }
 
 .sensor-label {
     font-size: .9em;
-    color: #6b7280;
+    color: #aaa;
     margin-bottom: 5px
 }
 
 .sensor-value {
     font-size: 1.4em;
     font-weight: 700;
-    color: #1f2937
+    color: #0ff;
+    text-shadow: 0 0 10px #0ff, 0 0 20px #00f
 }
 
 .sensor-unit {
     font-size: .9em;
-    color: #6b7280
+    color: #888
 }
 
 .last-update {
     text-align: center;
-    color: #6b7280;
+    color: #aaa;
     font-size: .9em;
     margin-top: 10px
 }
 
 .log-section {
-    background: rgba(255, 255, 255, .95);
+    background: rgba(20,20,40,.8);
+    border: 1px solid #0ff;
     border-radius: 20px;
     padding: 25px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, .1)
+    box-shadow: 0 0 20px rgba(0,255,255,.4)
 }
 
 .log-header {
@@ -189,7 +193,8 @@ body {
 .log-title {
     font-size: 1.5em;
     font-weight: 700;
-    color: #2d3748
+    color: #0ff;
+    text-shadow: 0 0 10px #0ff
 }
 
 .log-controls {
@@ -204,34 +209,40 @@ body {
     font-size: .9em;
     font-weight: 600;
     cursor: pointer;
-    transition: all .3s ease
+    transition: all .3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px
 }
 
 .btn-primary {
-    background: #6366f1;
-    color: #fff
+    background: linear-gradient(90deg, #0ff, #f0f);
+    color: #000;
+    box-shadow: 0 0 15px #0ff, 0 0 30px #f0f
 }
 
 .btn-primary:hover {
-    background: #4f46e5
+    background: linear-gradient(90deg, #f0f, #0ff);
+    box-shadow: 0 0 30px #f0f, 0 0 60px #0ff
 }
 
 .btn-secondary {
-    background: #e5e7eb;
-    color: #374151
+    background: rgba(255,255,255,.1);
+    color: #0ff;
+    border: 1px solid #0ff
 }
 
 .btn-secondary:hover {
-    background: #d1d5db
+    background: #0ff;
+    color: #000
 }
 
 .log-container {
     max-height: 400px;
     overflow-y: auto;
-    border: 1px solid #e5e7eb;
     border-radius: 10px;
     padding: 15px;
-    background: #f9fafb
+    background: rgba(0,0,0,.5);
+    color: #fff
 }
 
 .log-entry {
@@ -239,7 +250,7 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 10px 0;
-    border-bottom: 1px solid #e5e7eb
+    border-bottom: 1px solid rgba(0,255,255,.3)
 }
 
 .log-entry:last-child {
@@ -248,18 +259,17 @@ body {
 
 .log-time {
     font-size: .9em;
-    color: #6b7280;
-    font-weight: 500
+    color: #888
 }
 
 .log-device {
     font-weight: 600;
-    color: #374151
+    color: #0ff
 }
 
 .log-data {
     font-size: .9em;
-    color: #4b5563
+    color: #fff
 }
 
 .alert {
@@ -270,15 +280,17 @@ body {
 }
 
 .alert-warning {
-    background: #fef3c7;
-    color: #92400e;
-    border-left: 4px solid #f59e0b
+    background: rgba(255,255,0,.1);
+    color: #ff0;
+    border-left: 4px solid #ff0;
+    text-shadow: 0 0 10px #ff0
 }
 
 .alert-error {
-    background: #fee2e2;
-    color: #991b1b;
-    border-left: 4px solid #ef4444
+    background: rgba(255,0,0,.1);
+    color: #f55;
+    border-left: 4px solid #f55;
+    text-shadow: 0 0 10px #f55
 }
 
 .stats-grid {
@@ -289,22 +301,29 @@ body {
 }
 
 .stat-card {
-    background: rgba(255, 255, 255, .95);
+    background: rgba(20,20,40,.8);
     padding: 20px;
     border-radius: 15px;
     text-align: center;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, .1)
+    border: 1px solid #f0f;
+    box-shadow: 0 0 20px rgba(255,0,255,.4);
+    transition: all .3s ease
+}
+
+.stat-card:hover {
+    box-shadow: 0 0 40px #f0f, 0 0 80px #0ff
 }
 
 .stat-number {
     font-size: 2em;
     font-weight: 700;
-    color: #6366f1;
-    margin-bottom: 5px
+    color: #0ff;
+    margin-bottom: 5px;
+    text-shadow: 0 0 20px #0ff
 }
 
 .stat-label {
-    color: #6b7280;
+    color: #aaa;
     font-size: .9em
 }
 
@@ -313,32 +332,25 @@ body {
     align-items: center;
     gap: 8px;
     font-size: .9em;
-    color: #6b7280
+    color: #0ff
 }
 
 .connection-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #10b981;
+    background: #0ff;
+    box-shadow: 0 0 10px #0ff, 0 0 20px #0ff;
     animation: pulse 2s infinite
 }
 
 .offline .connection-dot {
-    background: #ef4444
+    background: #f55;
+    box-shadow: 0 0 10px #f55, 0 0 20px #f55
 }
 
 @media (max-width:768px) {
-    .devices-grid {
-        grid-template-columns: 1fr
-    }
-
-    .sensor-grid {
-        grid-template-columns: 1fr
-    }
-
-    .status-bar {
-        flex-direction: column;
-        gap: 10px
-    }
+    .devices-grid { grid-template-columns: 1fr }
+    .sensor-grid { grid-template-columns: 1fr }
+    .status-bar { flex-direction: column; gap: 10px }
 }

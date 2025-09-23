@@ -1,40 +1,13 @@
 // --------- CONFIG ---------
 const CONFIG = {
-  // ใช้ host/port เดียวกับหน้าเว็บอัตโนมัติ
   HTTP_ORIGIN: `${location.protocol}//${location.host}`,
   WS_URL: (location.protocol === 'https:' ? 'wss' : 'ws') + '://' + location.host + '/ws',
-  POLLING_INTERVAL: 5000,     // 5s
-  CONNECTION_TIMEOUT: 10000   // 10s
+  POLLING_INTERVAL: 5000,
+  CONNECTION_TIMEOUT: 10000
 };
 
 // --------- DEVICE STORE ---------
-let devices = {
-  'ESP32_001': {
-    id: 'ESP32_001',
-    name: 'Plant Monitor A',
-    location: 'Living Room',
-    isActive: false,
-    lastSeen: null,
-    sensors: { temperature: 0, humidity: 0, soilMoisture: 0, lightLevel: 0 }
-  },
-  'ESP32_002': {
-    id: 'ESP32_002',
-    name: 'Plant Monitor B',
-    location: 'Balcony',
-    isActive: false,
-    lastSeen: null,
-    sensors: { temperature: 0, humidity: 0, soilMoisture: 0, lightLevel: 0 }
-  },
-  'ESP32_003': {
-    id: 'ESP32_003',
-    name: 'Plant Monitor C',
-    location: 'Garden',
-    isActive: false,
-    lastSeen: null,
-    sensors: { temperature: 0, humidity: 0, soilMoisture: 0, lightLevel: 0 }
-  }
-};
-
+let devices = {};   // dynamic map
 let dataLogs = [];
 let logId = 1;
 let websocket = null;
@@ -86,30 +59,41 @@ function initWebSocket() {
 }
 
 function processWebSocketData(data) {
-  if (data.deviceId && devices[data.deviceId]) {
-    const device = devices[data.deviceId];
-    device.isActive = true;
-    device.lastSeen = new Date();
+  if (!data.deviceId) return;
 
-    if (data.sensors) {
-      device.sensors = {
-        temperature: parseFloat(data.sensors.temperature) || 0,
-        humidity: parseFloat(data.sensors.humidity) || 0,
-        soilMoisture: parseFloat(data.sensors.soilMoisture) || 0,
-        lightLevel: parseFloat(data.sensors.lightLevel) || 0
-      };
-    }
-
-    const logData = `T:${device.sensors.temperature.toFixed(1)}°C, H:${device.sensors.humidity.toFixed(1)}%, S:${device.sensors.soilMoisture.toFixed(1)}%, L:${device.sensors.lightLevel.toFixed(0)}lux`;
-    addLog(device, logData);
-
-    updateDeviceDisplay();
-    updateStats();
-    checkAlerts();
+  if (!devices[data.deviceId]) {
+    devices[data.deviceId] = {
+      id: data.deviceId,
+      name: `Device ${data.deviceId}`,
+      location: "Unknown",
+      isActive: false,
+      lastSeen: null,
+      sensors: { temperature: 0, humidity: 0, soilMoisture: 0, lightLevel: 0 }
+    };
   }
+
+  const device = devices[data.deviceId];
+  device.isActive = true;
+  device.lastSeen = new Date();
+
+  if (data.sensors) {
+    device.sensors = {
+      temperature: parseFloat(data.sensors.temperature) || 0,
+      humidity: parseFloat(data.sensors.humidity) || 0,
+      soilMoisture: parseFloat(data.sensors.soilMoisture) || 0,
+      lightLevel: parseFloat(data.sensors.lightLevel) || 0
+    };
+  }
+
+  const logData = `T:${device.sensors.temperature.toFixed(1)}°C, H:${device.sensors.humidity.toFixed(1)}%, S:${device.sensors.soilMoisture.toFixed(1)}%, L:${device.sensors.lightLevel.toFixed(0)}lux`;
+  addLog(device, logData);
+
+  updateDeviceDisplay();
+  updateStats();
+  checkAlerts();
 }
 
-// --------- HTTP (fallback/poll) ---------
+// --------- HTTP fallback ---------
 async function fetchDeviceData() {
   try {
     const controller = new AbortController();
@@ -137,20 +121,12 @@ async function fetchDeviceData() {
 function processHttpData(data) {
   if (data.devices && Array.isArray(data.devices)) {
     data.devices.forEach((dev) => {
-      if (!devices[dev.id]) return;
-      const d = devices[dev.id];
-      d.isActive = !!dev.isActive;
-      d.lastSeen = dev.lastSeen ? new Date(dev.lastSeen) : new Date();
-      if (dev.sensors) {
-        d.sensors = {
-          temperature: parseFloat(dev.sensors.temperature) || 0,
-          humidity: parseFloat(dev.sensors.humidity) || 0,
-          soilMoisture: parseFloat(dev.sensors.soilMoisture) || 0,
-          lightLevel: parseFloat(dev.sensors.lightLevel) || 0
-        };
+      if (!devices[dev.id]) {
+        devices[dev.id] = dev;
+      } else {
+        devices[dev.id] = { ...devices[dev.id], ...dev };
       }
-      const logData = `T:${d.sensors.temperature.toFixed(1)}°C, H:${d.sensors.humidity.toFixed(1)}%, S:${d.sensors.soilMoisture.toFixed(1)}%, L:${d.sensors.lightLevel.toFixed(0)}lux`;
-      addLog(d, logData);
+      addLog(dev, `T:${dev.sensors.temperature}°C, H:${dev.sensors.humidity}%, S:${dev.sensors.soilMoisture}%, L:${dev.sensors.lightLevel}lux`);
     });
 
     updateDeviceDisplay();
@@ -352,16 +328,6 @@ function exportLogs() {
   window.URL.revokeObjectURL(url);
 }
 
-// --------- HEALTH ---------
-function checkDeviceHealth() {
-  const now = new Date();
-  Object.values(devices).forEach(d => {
-    if (d.lastSeen && (now - new Date(d.lastSeen)) > 60000) {
-      d.isActive = false;
-    }
-  });
-}
-
 // --------- INIT ---------
 function refreshData() {
   if (websocket && websocket.readyState === WebSocket.OPEN) {
@@ -377,7 +343,6 @@ function init() {
   console.log('Initializing Flora Care Dashboard...');
   initWebSocket();
 
-  // fallback polling
   setTimeout(() => {
     if (!websocket || websocket.readyState !== WebSocket.OPEN) {
       console.log('WS not open -> fallback to HTTP polling');
@@ -389,7 +354,6 @@ function init() {
   updateStats();
   checkAlerts();
 
-  setInterval(checkDeviceHealth, 30000);
   setInterval(() => {
     updateDeviceDisplay();
     updateStats();
