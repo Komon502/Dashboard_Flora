@@ -1,73 +1,81 @@
 <!DOCTYPE html>
 <html lang="th">
-
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Flora Care System Dashboard</title>
+    <title>Flora Care Dashboard</title>
     <link rel="stylesheet" href="./style.css" />
 </head>
 
 <body>
-    <div class="header">
-        <h1>🌱 Flora Care System Dashboard</h1>
-        <p>ระบบติดตามดูแลต้นไม้อัจฉริยะ - ESP32 BLE Network</p>
-    </div>
+    <header class="top-header">
+        <h1>🌱 Flora Care Dashboard</h1>
+        <p>Smart Plant Monitoring System – ESP32 BLE</p>
+    </header>
 
-    <div class="dashboard">
-        <div class="status-bar">
-            <div class="status-item">
-                <div class="status-indicator status-online"></div>
-                <span>Server Status: <span id="serverStatus">Online</span></span>
-            </div>
-            <div class="status-item">
-                <span>Active Devices: <span id="activeDevices">0</span>/3</span>
-            </div>
-            <div class="status-item">
-                <span>Last Update: <span id="lastUpdate">--:--:--</span></span>
-            </div>
-            <div class="status-item">
-                <span>Total Logs: <span id="totalLogs">0</span></span>
-            </div>
-        </div>
+    <main class="container">
 
+        <!-- Status Bar -->
+        <section class="status-bar">
+            <div class="status-box">
+                <span class="label">Server:</span>
+                <span id="serverStatus" class="value status-online">Online</span>
+            </div>
+            <div class="status-box">
+                <span class="label">Devices:</span>
+                <span id="activeDevices" class="value">0</span> / 100
+            </div>
+            <div class="status-box">
+                <span class="label">Updated:</span>
+                <span id="lastUpdate" class="value">--:--:--</span>
+            </div>
+            <div class="status-box">
+                <span class="label">Logs:</span>
+                <span id="totalLogs" class="value">0</span>
+            </div>
+        </section>
+
+        <!-- Alerts -->
         <div id="alertContainer"></div>
 
-        <div class="stats-grid">
+        <!-- Stats cards -->
+        <section class="stats-grid">
             <div class="stat-card">
-                <div class="stat-number" id="avgTemp">--</div>
-                <div class="stat-label">อุณหภูมิเฉลี่ย (°C)</div>
+                <h3 id="avgTemp">--</h3>
+                <p>อุณหภูมิเฉลี่ย (°C)</p>
             </div>
             <div class="stat-card">
-                <div class="stat-number" id="avgHumidity">--</div>
-                <div class="stat-label">ความชื้นเฉลี่ย (%)</div>
+                <h3 id="avgHumidity">--</h3>
+                <p>ความชื้นเฉลี่ย (%)</p>
             </div>
             <div class="stat-card">
-                <div class="stat-number" id="avgSoil">--</div>
-                <div class="stat-label">ความชื้นดินเฉลี่ย (%)</div>
+                <h3 id="avgSoil">--</h3>
+                <p>ความชื้นดินเฉลี่ย (%)</p>
             </div>
             <div class="stat-card">
-                <div class="stat-number" id="avgLight">--</div>
-                <div class="stat-label">แสงเฉลี่ย (lux)</div>
+                <h3 id="avgLight">--</h3>
+                <p>แสงเฉลี่ย (lux)</p>
             </div>
-        </div>
+        </section>
 
-        <div class="devices-grid" id="devicesGrid"></div>
+        <!-- Device Cards -->
+        <section class="devices-grid" id="devicesGrid"></section>
 
-        <div class="log-section">
+        <!-- Log Section -->
+        <section class="log-section">
             <div class="log-header">
-                <h2 class="log-title">📊 Data Logs</h2>
-                <div class="log-controls">
-                    <button class="btn btn-primary" id="btnRefresh">Refresh Data</button>
-                    <button class="btn btn-secondary" id="btnClear">Clear Logs</button>
-                    <button class="btn btn-primary" id="btnExport">Export CSV</button>
+                <h2>📊 Data Logs</h2>
+                <div class="log-buttons">
+                    <button id="btnRefresh" class="btn primary">Refresh</button>
+                    <button id="btnClear" class="btn danger">Clear</button>
+                    <button id="btnExport" class="btn primary">Export CSV</button>
                 </div>
             </div>
-            <div class="log-container" id="logContainer"></div>
-        </div>
-    </div>
+            <div id="logContainer" class="log-container"></div>
+        </section>
+
+    </main>
 
     <script src="./script.js"></script>
 </body>
-
 </html>
